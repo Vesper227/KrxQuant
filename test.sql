@@ -1,1 +1,0 @@
-SELECT Date, Ticker, ChangeRate FROM stock_monthly_data LIMIT 100;
