@@ -78,7 +78,7 @@ for ticker in tickers:
         # Fundamental 데이터 (BPS PER PBR EPS DIV DPS)
         fundamental = stock.get_market_fundamental_by_date(start_date, end_date, ticker, freq="m")
 
-            # 필요한 컬럼이 모두 있는지 확인
+        # 필요한 컬럼이 모두 있는지 확인
         required_columns = ['TRD_DD', 'BPS', 'PER', 'PBR', 'EPS', 'DVD_YLD', 'DPS']
         missing_columns = [col for col in required_columns if col not in fundamental.columns]
         if missing_columns:
