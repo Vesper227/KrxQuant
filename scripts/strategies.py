@@ -1,18 +1,4 @@
 import pandas as pd
-import logging
-
-# 각 전략별 로그 파일 설정
-low_per_logger = logging.getLogger("low_per")
-low_per_logger.addHandler(logging.FileHandler("low_per_strategy.log", encoding="utf-8"))
-low_per_logger.setLevel(logging.INFO)
-
-high_div_logger = logging.getLogger("low_per_high_div")
-high_div_logger.addHandler(logging.FileHandler("low_per_high_div_strategy.log", encoding="utf-8"))
-high_div_logger.setLevel(logging.INFO)
-
-combined_score_logger = logging.getLogger("combined_score")
-combined_score_logger.addHandler(logging.FileHandler("combined_score_strategy.log", encoding="utf-8"))
-combined_score_logger.setLevel(logging.INFO)
 
 def low_per_strategy(data, date):
     """저PER 전략: 월별 PER 하위 30% 선택"""
@@ -21,7 +7,6 @@ def low_per_strategy(data, date):
         return pd.DataFrame()
     #selected = monthly_data.nsmallest(len(monthly_data) // 3, "PER")
     selected = monthly_data.nlargest(20, "PER")
-    low_per_logger.info(f"{date}: Selected {len(selected)} stocks.")
     return selected
 
 def low_per_high_div_strategy(data, date):
@@ -32,7 +17,6 @@ def low_per_high_div_strategy(data, date):
     # PER 하위 50% + 배당수익률 상위 50%
     per_filtered = monthly_data.nsmallest(len(monthly_data) // 2, "PER")
     selected = per_filtered.nlargest(len(per_filtered) // 2, "DIV")
-    high_div_logger.info(f"{date}: Selected {len(selected)} stocks.")
     return selected
 
 def combined_score_strategy(data, date):
@@ -56,7 +40,6 @@ def combined_score_strategy(data, date):
     )
 
     selected = monthly_data.nlargest(20, "Total_score")
-    combined_score_logger.info(f"{date}: Selected {len(selected)} stocks.")
     return selected
 
 

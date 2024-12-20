@@ -7,7 +7,6 @@
 
 ## 📂 프로젝트 구조
 
-```plaintext
 KrxQuant/
 ├── data/                # 데이터 파일 저장 (예: SQLite, CSV 등)
 ├── logs/                # 실행 중 생성되는 로그 저장

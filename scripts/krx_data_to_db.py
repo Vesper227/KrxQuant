@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 
 # 데이터베이스 연결
-db_path = "krx_data.db"
+db_path = "data/krx_data.db"
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
@@ -50,7 +50,7 @@ conn.commit()
 
 # 데이터 가져오기
 start_date = "20150101"
-end_date = datetime.now().strftime("%Y%m%d")  # 현재 날짜
+end_date = "20241130" #datetime.now().strftime("%Y%m%d")  # 현재 날짜
 tickers = stock.get_market_ticker_list()
 
 for ticker in tickers:
@@ -91,7 +91,6 @@ for ticker in tickers:
 
         # 필요한 컬럼만 선택
         fundamental = fundamental[required_columns]
-
         fundamental.index = pd.to_datetime(fundamental.index)
 
         # 데이터 통합
