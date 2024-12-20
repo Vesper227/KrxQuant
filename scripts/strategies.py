@@ -1,25 +1,47 @@
 import pandas as pd
 
-def low_per_strategy(data, date):
-    """저PER 전략: 월별 PER 하위 30% 선택"""
-    monthly_data = data.loc[data.index == date]
-    if monthly_data.empty:
-        return pd.DataFrame()
-    #selected = monthly_data.nsmallest(len(monthly_data) // 3, "PER")
-    selected = monthly_data.nlargest(20, "PER")
+def low_per_strategy(data, date, max_stocks=20):
+    """
+    저 PER 전략: PER 값이 낮은 순으로 최대 max_stocks 개수만큼 선택.
+
+    Args:
+        data (pd.DataFrame): 종목 데이터.
+        date (str): 전략 실행 날짜.
+        max_stocks (int): 선택할 최대 종목 수.
+
+    Returns:
+        pd.DataFrame: 선택된 종목 데이터.
+    """
+    # 특정 날짜의 데이터 필터링
+    # filtered = data[data.index == date]
+
+    selected = data.nsmallest(max_stocks, "PER")  # PER 기준 상위 max_stocks 선택
+
     return selected
 
-def low_per_high_div_strategy(data, date):
-    """저PER + 고배당 전략"""
-    monthly_data = data.loc[data.index == date]
-    if monthly_data.empty:
-        return pd.DataFrame()
+
+def low_per_high_div_strategy(data, date, max_stocks=20):
+    """
+    저 PER + 고 배당 전략: PER이 낮고 배당 수익률이 높은 순으로 선택.
+
+    Args:
+        data (pd.DataFrame): 종목 데이터.
+        date (str): 전략 실행 날짜.
+        max_stocks (int): 선택할 최대 종목 수.
+
+    Returns:
+        pd.DataFrame: 선택된 종목 데이터.
+    """
+    # 특정 날짜의 데이터 필터링
+    # filtered = data[data.index == date]
+
     # PER 하위 50% + 배당수익률 상위 50%
-    per_filtered = monthly_data.nsmallest(len(monthly_data) // 2, "PER")
-    selected = per_filtered.nlargest(len(per_filtered) // 2, "DIV")
+    per_filtered = data.nsmallest(len(data) // 2, "PER")
+    selected = per_filtered.nlargest(max_stocks, "DIV")
+
     return selected
 
-def combined_score_strategy(data, date):
+def combined_score_strategy(data, date, max_stocks=20):
     """
     다중 팩터 전략: PER, PBR, ROE, 모멘텀 결합
     """

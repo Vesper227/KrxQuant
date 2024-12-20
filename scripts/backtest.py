@@ -9,7 +9,7 @@ from tabulate import tabulate
 # ------------------ 설정 및 초기화 ------------------
 
 # 전략 설정
-selected_strategy = low_per_high_div_strategy
+selected_strategy = combined_score_strategy
 strategy_name = selected_strategy.__name__
 
 # 로깅 설정
@@ -96,6 +96,68 @@ def calculate_monthly_return(previous_value, current_value):
     """월별 수익률 계산"""
     return (current_value - previous_value) / previous_value if previous_value > 0 else 0.0
 
+def calculate_cagr(initial_value, final_value, start_date, end_date):
+    """
+    CAGR (연평균 성장률) 계산.
+
+    Args:
+        initial_value (float): 초기 포트폴리오 가치.
+        final_value (float): 최종 포트폴리오 가치.
+        start_date (str): 백테스트 시작 날짜 (YYYY-MM-DD).
+        end_date (str): 백테스트 종료 날짜 (YYYY-MM-DD).
+
+    Returns:
+        float: CAGR 값.
+    """
+    # 백테스트 기간 (연수 단위)
+    num_years = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days / 365.0
+
+    # CAGR 계산
+    cagr = (final_value / initial_value) ** (1 / num_years) - 1
+    return cagr
+
+import matplotlib.pyplot as plt
+
+def plot_backtest_results(dates, portfolio_values, drawdowns, monthly_returns=None):
+    """
+    백테스트 결과를 시각화하는 함수.
+
+    Args:
+        dates (list): 백테스트 기간의 날짜 리스트.
+        portfolio_values (list): 포트폴리오 가치 변화 리스트.
+        drawdowns (list): 낙폭(MDD) 값 리스트.
+        monthly_returns (list): 월별 수익률 리스트 (옵션).
+    """
+    # 포트폴리오 가치 변화 그래프
+    plt.figure(figsize=(14, 8))
+    plt.plot(dates, portfolio_values, label="Portfolio Value", color="blue", linewidth=2)
+    
+    # MDD 강조
+    mdd_date = dates[drawdowns.index(max(drawdowns))]
+    mdd_value = min(portfolio_values)
+    plt.scatter(mdd_date, mdd_value, color="red", label=f"MDD ({max(drawdowns):.2%})", zorder=5, s=100)
+
+    # 그래프 스타일 설정
+    plt.title("Backtest Results: Portfolio Value", fontsize=16)
+    plt.xlabel("Date", fontsize=12)
+    plt.ylabel("Portfolio Value (KRW)", fontsize=12)
+    plt.legend()
+    plt.grid(alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+    # 월별 수익률 그래프 (옵션)
+    if monthly_returns:
+        plt.figure(figsize=(14, 6))
+        plt.bar(range(len(monthly_returns)), [x * 100 for x in monthly_returns], color="green", alpha=0.6)
+        plt.title("Monthly Returns (%)", fontsize=16)
+        plt.xlabel("Month", fontsize=12)
+        plt.ylabel("Return (%)", fontsize=12)
+        plt.grid(axis="y", alpha=0.7)
+        plt.tight_layout()
+        plt.show()
+
+
 # ------------------ 백테스트 실행 ------------------
 
 # 초기 설정
@@ -178,12 +240,18 @@ results = pd.DataFrame({
     "Drawdown": drawdowns[:-1]
 }).set_index("Date")
 
+cagr = calculate_cagr(portfolio_values[0], portfolio_values[-1], start_date, end_date)
 total_return = (results["Portfolio Value"].iloc[-1] / results["Portfolio Value"].iloc[0]) - 1
 sharpe_ratio = (results["Monthly Return"].mean() - (0.03 / 12)) / results["Monthly Return"].std() * (12 ** 0.5)
 
+print(f"CAGR: {cagr:.2%}")  # 퍼센트 형태로 출력
 print(f"Total Return: {total_return:.2%}")
 print(f"Maximum Drawdown: {max_drawdown:.2%}")
 print(f"Sharpe Ratio: {sharpe_ratio:.4f}")
+
+# 포트폴리오 가치와 낙폭 그래프
+plot_backtest_results(dates, portfolio_values, drawdowns)
+# plot_backtest_results(dates, portfolio_values, drawdowns, monthly_returns) # 포트폴리오 가치 + 월별 수익률 그래프
 
 # ------------------ 종료 ------------------
 conn.close()
