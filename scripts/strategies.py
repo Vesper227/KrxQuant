@@ -41,30 +41,6 @@ def low_per_high_div_strategy(data, date, max_stocks=20):
 
     return selected
 
-def combined_score_strategy(data, date, max_stocks=20):
-    """
-    다중 팩터 전략: PER, PBR, ROE, 모멘텀 결합
-    """
-    monthly_data = data.loc[data.index == date].copy()
-    if monthly_data.empty:
-        return pd.DataFrame()
-
-    monthly_data["PER_score"] = 1 / monthly_data["PER"]
-    monthly_data["PBR_score"] = 1 / monthly_data["PBR"]
-    monthly_data["ROE_score"] = monthly_data["EPS"] / monthly_data["BPS"]
-    monthly_data["Momentum_score"] = monthly_data["ChangeRate"].rolling(12).sum()
-
-    monthly_data["Total_score"] = (
-        0.3 * monthly_data["PER_score"] +
-        0.3 * monthly_data["PBR_score"] +
-        0.2 * monthly_data["ROE_score"] +
-        0.2 * monthly_data["Momentum_score"]
-    )
-
-    selected = monthly_data.nlargest(20, "Total_score")
-    return selected
-
-
 def quality_value_strategy(data):
     """
     품질 + 가치 전략: ROE, 부채비율, PER, PBR, 배당수익률 기준으로 점수화.

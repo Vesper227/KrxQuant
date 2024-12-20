@@ -3,13 +3,13 @@ import pandas as pd
 import logging
 import os
 from datetime import datetime
-from strategies import low_per_strategy, low_per_high_div_strategy, combined_score_strategy
+from strategies import low_per_strategy, low_per_high_div_strategy
 from tabulate import tabulate
 
 # ------------------ 설정 및 초기화 ------------------
 
 # 전략 설정
-selected_strategy = combined_score_strategy
+selected_strategy = low_per_high_div_strategy
 strategy_name = selected_strategy.__name__
 
 # 로깅 설정
@@ -133,8 +133,9 @@ def plot_backtest_results(dates, portfolio_values, drawdowns, monthly_returns=No
     plt.plot(dates, portfolio_values, label="Portfolio Value", color="blue", linewidth=2)
     
     # MDD 강조
-    mdd_date = dates[drawdowns.index(max(drawdowns))]
-    mdd_value = min(portfolio_values)
+    mdd_index = drawdowns.index(max(drawdowns))
+    mdd_date = dates[mdd_index]
+    mdd_value = portfolio_values[mdd_index]
     plt.scatter(mdd_date, mdd_value, color="red", label=f"MDD ({max(drawdowns):.2%})", zorder=5, s=100)
 
     # 그래프 스타일 설정
@@ -161,7 +162,7 @@ def plot_backtest_results(dates, portfolio_values, drawdowns, monthly_returns=No
 # ------------------ 백테스트 실행 ------------------
 
 # 초기 설정
-start_date, end_date = '2020-01-01', '2024-11-30'
+start_date, end_date = '2015-01-01', '2024-11-30'
 initial_cash = 10_000_000
 cash, holdings = initial_cash, {}
 portfolio_values, monthly_returns = [initial_cash], [0.0]  # 초기값 설정
