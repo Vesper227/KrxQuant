@@ -54,27 +54,28 @@ def small_value_strategy(data, date, max_stocks=20):
         pd.DataFrame: 선택된 종목 데이터.
     """
     # 특정 날짜 데이터 필터링
-    filtered = data[data.index == date]
+    # filtered = data[data.index == date]
 
-    # EPS와 BPS로 ROE 계산
-    filtered["ROE"] = (filtered["EPS"] / filtered["BPS"]) * 100  # ROE 계산
+    # ROE 계산 (EPS / BPS * 100)
+    data_wROE = data.copy()
+    data_wROE["ROE"] = (data_wROE["EPS"] / data_wROE["BPS"]) * 100
 
     # 필터링 조건: 시가총액 하위 30%, PBR 하위 30%, ROE 상위 50%
-    mktcap_threshold = filtered["MarketCap"].quantile(0.3)  # 시가총액 하위 30%
-    pbr_threshold = filtered["PBR"].quantile(0.3)           # PBR 하위 30%
-    roe_threshold = filtered["ROE"].quantile(0.5)           # ROE 상위 50%
+    mktcap_threshold = data_wROE["MarketCap"].quantile(0.3)  # 시가총액 하위 30%
+    pbr_threshold = data_wROE["PBR"].quantile(0.3)           # PBR 하위 30%
+    roe_threshold = data_wROE["ROE"].quantile(0.5)           # ROE 상위 50%
 
-    filtered = filtered[
-        (filtered["MarketCap"] <= mktcap_threshold) &
-        (filtered["PBR"] <= pbr_threshold) &
-        (filtered["ROE"] >= roe_threshold)
+    data_wROE = data_wROE[
+        (data_wROE["MarketCap"] <= mktcap_threshold) &
+        (data_wROE["PBR"] <= pbr_threshold) &
+        (data_wROE["ROE"] >= roe_threshold)
     ]
 
     # 점수 계산: ROE / PBR
-    filtered["Score"] = filtered["ROE"] / filtered["PBR"]
+    data_wROE["Score"] = data_wROE["ROE"] / data_wROE["PBR"]
 
     # 점수 기준 상위 max_stocks 선택
-    selected = filtered.nlargest(max_stocks, "Score")
+    selected = data_wROE.nlargest(max_stocks, "Score")
 
     return selected
 
