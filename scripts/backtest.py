@@ -51,27 +51,44 @@ def load_data(conn, start_date, end_date):
 
 def strategy_filter(data, date):
     """
-    특정 날짜의 데이터를 필터링하여 전략에 사용 가능하도록 처리.
+    데이터 유효성을 검사하고 전략 적용 가능한 데이터로 필터링.
+    
+    Args:
+        data (pd.DataFrame): 원본 데이터.
+    
+    Returns:
+        pd.DataFrame: 유효성 검사를 통과한 데이터.
     """
     # 날짜 기준 데이터 필터링
     filtered = data.loc[data.index == date]
 
-    # 음수 값 제거
-    filtered = filtered[(filtered["PER"] > 0) & (filtered["EPS"] > 0) & (filtered["PBR"] > 0)]
-    filtered = filtered[(filtered["EPS"] > 0) & (filtered["BPS"] > 0)]
+    # 필수 컬럼 존재 여부 확인
+    required_columns = ["Ticker", "PER", "PBR", "EPS", "BPS"]
+    for col in required_columns:
+        if col not in data.columns:
+            raise ValueError(f"Missing required column: {col}")
 
-    # 아웃라이어 제거 (상하위 5% 제외)
-    if not filtered.empty:
-        per_bounds = filtered["PER"].quantile([0.05, 0.95])
-        pbr_bounds = filtered["PBR"].quantile([0.05, 0.95])
+    # 결측치 처리
+    # missing_ratio = data.isnull().sum() / len(data)
+    # print(missing_ratio)
+    data = data.dropna()
 
-        filtered = filtered[
-            (filtered["PER"] >= per_bounds[0.05]) & (filtered["PER"] <= per_bounds[0.95]) &
-            (filtered["PBR"] >= pbr_bounds[0.05]) & (filtered["PBR"] <= pbr_bounds[0.95])
-        ]
+    # 중복 데이터 제거
+    data = data.reset_index().drop_duplicates(subset=["Date", "Ticker"]).set_index("Date")
 
-    # 결측값 제거
-    filtered = filtered.dropna()
+    # 이상치 필터링 (IQR 방식)
+    for col in ["PER", "PBR"]:
+        q1 = data[col].quantile(0.25)
+        q3 = data[col].quantile(0.75)
+        iqr = q3 - q1
+        data = data[(data[col] >= q1 - 1.5 * iqr) & (data[col] <= q3 + 1.5 * iqr)]
+
+    # 값 범위 필터링
+    data = data[(data["PER"] > 0) & (data["PER"] < 30)]
+    data = data[(data["PBR"] > 0) & (data["PBR"] < 5)]
+
+    # 날짜 정렬
+    data = data.sort_values(by="Date")
 
     return filtered
 
@@ -163,7 +180,7 @@ def plot_backtest_results(dates, portfolio_values, drawdowns, monthly_returns=No
 # ------------------ 백테스트 실행 ------------------
 
 # 초기 설정
-start_date, end_date = '2015-01-01', '2024-11-30'
+start_date, end_date = '2020-01-01', '2024-11-30'
 initial_cash = 10_000_000
 cash, holdings = initial_cash, {}
 portfolio_values, monthly_returns = [initial_cash], [0.0]  # 초기값 설정
