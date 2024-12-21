@@ -3,13 +3,13 @@ import pandas as pd
 import logging
 import os
 from datetime import datetime
-from strategies import low_per_strategy, low_per_high_div_strategy
+from strategies import low_per_strategy, low_per_high_div_strategy, small_value_strategy
 from tabulate import tabulate
 
 # ------------------ 설정 및 초기화 ------------------
 
 # 전략 설정
-selected_strategy = low_per_high_div_strategy
+selected_strategy = small_value_strategy
 strategy_name = selected_strategy.__name__
 
 # 로깅 설정
@@ -58,6 +58,7 @@ def strategy_filter(data, date):
 
     # 음수 값 제거
     filtered = filtered[(filtered["PER"] > 0) & (filtered["EPS"] > 0) & (filtered["PBR"] > 0)]
+    filtered = filtered[(filtered["EPS"] > 0) & (filtered["BPS"] > 0)]
 
     # 아웃라이어 제거 (상하위 5% 제외)
     if not filtered.empty:
@@ -244,11 +245,13 @@ results = pd.DataFrame({
 cagr = calculate_cagr(portfolio_values[0], portfolio_values[-1], start_date, end_date)
 total_return = (results["Portfolio Value"].iloc[-1] / results["Portfolio Value"].iloc[0]) - 1
 sharpe_ratio = (results["Monthly Return"].mean() - (0.03 / 12)) / results["Monthly Return"].std() * (12 ** 0.5)
+monthly_returns_std = results["Monthly Return"].std()
 
 print(f"CAGR: {cagr:.2%}")  # 퍼센트 형태로 출력
 print(f"Total Return: {total_return:.2%}")
 print(f"Maximum Drawdown: {max_drawdown:.2%}")
 print(f"Sharpe Ratio: {sharpe_ratio:.4f}")
+print(f"Monthly Volatility: {monthly_returns_std:.2%}")
 
 # 포트폴리오 가치와 낙폭 그래프
 plot_backtest_results(dates, portfolio_values, drawdowns)

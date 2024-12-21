@@ -41,6 +41,44 @@ def low_per_high_div_strategy(data, date, max_stocks=20):
 
     return selected
 
+def small_value_strategy(data, date, max_stocks=20):
+    """
+    소형 가치주 전략: 시가총액 하위 30% & 저PBR & ROE 계산 및 조건 추가.
+    
+    Args:
+        data (pd.DataFrame): 종목 데이터.
+        date (str): 전략 실행 날짜.
+        max_stocks (int): 선택할 최대 종목 수.
+
+    Returns:
+        pd.DataFrame: 선택된 종목 데이터.
+    """
+    # 특정 날짜 데이터 필터링
+    filtered = data[data.index == date]
+
+    # EPS와 BPS로 ROE 계산
+    filtered["ROE"] = (filtered["EPS"] / filtered["BPS"]) * 100  # ROE 계산
+
+    # 필터링 조건: 시가총액 하위 30%, PBR 하위 30%, ROE 상위 50%
+    mktcap_threshold = filtered["MarketCap"].quantile(0.3)  # 시가총액 하위 30%
+    pbr_threshold = filtered["PBR"].quantile(0.3)           # PBR 하위 30%
+    roe_threshold = filtered["ROE"].quantile(0.5)           # ROE 상위 50%
+
+    filtered = filtered[
+        (filtered["MarketCap"] <= mktcap_threshold) &
+        (filtered["PBR"] <= pbr_threshold) &
+        (filtered["ROE"] >= roe_threshold)
+    ]
+
+    # 점수 계산: ROE / PBR
+    filtered["Score"] = filtered["ROE"] / filtered["PBR"]
+
+    # 점수 기준 상위 max_stocks 선택
+    selected = filtered.nlargest(max_stocks, "Score")
+
+    return selected
+
+
 def quality_value_strategy(data):
     """
     품질 + 가치 전략: ROE, 부채비율, PER, PBR, 배당수익률 기준으로 점수화.
